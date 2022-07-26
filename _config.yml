@@ -3,11 +3,11 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title: Hexo
+title: Hamilton Chang's Blog
 subtitle: ''
 description: ''
 keywords:
-author: John Doe
+author: Hamilton Chang
 language: en
 timezone: ''
 
@@ -98,7 +98,7 @@ ignore:
 # Extensions
 ## Plugins: https://hexo.io/plugins/
 ## Themes: https://hexo.io/themes/
-theme: landscape
+theme: next # landscape
 
 # Math Formulas Render Support
 math:
