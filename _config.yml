@@ -105,4 +105,4 @@ theme: landscape
 deploy:
   type: git
   repo: git@github.com:discipleofhamilton/discipleofhamilton.github.io.git
-  branch: main
+  branch: gh-pages
