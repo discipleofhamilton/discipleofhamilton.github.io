@@ -14,7 +14,7 @@ Here is the [paper](https://www.usenix.org/legacy/event/fast11/tech/full_papers/
 2. [A Dynamic Tier Manager (EDT-DTM)](EDT-DTM): 在當前給定的工作負載/應用場景中，EDT-DTM運行在configured storage system，通過動態地搬移extent (fixed-size portions of a volume)來將資料放置在最合適的tier上。
 
 
-
+<!-- more -->
 ## Extent-based Tiering
 
 回過頭來看EDT的原型，Extent-based Tiering。研究中表明當extent的大小越小，資料擺放的就會更高效。但會帶來metadata[^2] (元數據、後設資料)的開銷，而metadata的目的是持續追蹤extent的位置和其他統計資料，並且此開銷會隨著extent大小越小而增加。
