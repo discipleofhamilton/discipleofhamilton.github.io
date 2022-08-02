@@ -30,7 +30,7 @@
 <meta property="og:image" content="https://i.imgur.com/yz0ZaYl.png">
 <meta property="og:image" content="https://i.imgur.com/dPjZa8E.png">
 <meta property="article:published_time" content="2022-07-26T13:50:20.000Z">
-<meta property="article:modified_time" content="2022-07-26T14:16:37.480Z">
+<meta property="article:modified_time" content="2022-08-02T06:27:29.450Z">
 <meta property="article:author" content="Hamilton Chang">
 <meta property="article:tag" content="Auto Tiering Storage">
 <meta name="twitter:card" content="summary">
@@ -176,10 +176,16 @@
                 <i class="far fa-calendar"></i>
               </span>
               <span class="post-meta-item-text">Posted on</span>
-              
 
-              <time title="Created: 2022-07-26 21:50:20 / Modified: 22:16:37" itemprop="dateCreated datePublished" datetime="2022-07-26T21:50:20+08:00">2022-07-26</time>
+              <time title="Created: 2022-07-26 21:50:20" itemprop="dateCreated datePublished" datetime="2022-07-26T21:50:20+08:00">2022-07-26</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2022-08-02 14:27:29" itemprop="dateModified" datetime="2022-08-02T14:27:29+08:00">2022-08-02</time>
+              </span>
 
           
 
@@ -244,7 +250,16 @@
 <ul>
 <li><p>每個bin的性能與容量資源消耗定義:</p>
 <ul>
-<li><p>$$<br>\left{<br>\begin{aligned}<br>    RC_{P}&#x3D;\sum RC(E_{P},D),\ \forall E \<br>    RC_{C}&#x3D;\sum RC(E_{C},D),\ \forall E<br>\end{aligned}<br>\right.<br>$$</p>
+<li>
+      $$
+       \left\lbrace
+           \begin{aligned}
+               RC_{P}=\sum RC(E_{P},D),\ \forall E \\
+               RC_{C}=\sum RC(E_{C},D),\ \forall E
+           \end{aligned}
+       \right.
+       $$
+       
 </li>
 <li><p>上述兩者的最大值將給定總體bin的資源需求與對此bin類型來說所需要設備四捨五入後的近似整數。</p>
 </li>
@@ -479,6 +494,61 @@
 
 
   
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
 
   
 
