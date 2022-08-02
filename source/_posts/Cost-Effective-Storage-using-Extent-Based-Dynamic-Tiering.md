@@ -118,14 +118,16 @@ $$
 
    * 每個bin的性能與容量資源消耗定義:
 
-     * $$
-       \left\{
+     * {% raw %}
+      $$
+       \left\lbrace
            \begin{aligned}
                RC_{P}=\sum RC(E_{P},D),\ \forall E \\
                RC_{C}=\sum RC(E_{C},D),\ \forall E
            \end{aligned}
        \right.
        $$
+       {% endraw %}
 
      * 上述兩者的最大值將給定總體bin的資源需求與對此bin類型來說所需要設備四捨五入後的近似整數。
 
