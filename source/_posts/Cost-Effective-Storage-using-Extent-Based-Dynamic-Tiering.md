@@ -1,7 +1,11 @@
 ---
 title: Cost Effective Storage using Extent Based Dynamic Tiering
 date: 2022-07-26 21:50:20
-tags: 'Auto Tiering Storage'
+tags: 
+   - Auto Tiering 
+   - Storage 
+   - Cache
+categories: Storage
 ---
 
 Here is the [paper](https://www.usenix.org/legacy/event/fast11/tech/full_papers/Guerra.pdf).

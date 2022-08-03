@@ -1,7 +1,11 @@
 ---
 title: Auto-Tiering
 date: 2022-07-26 21:31:36
-tags: 'Auto Tiering Storage'
+tags: 
+   - Auto Tiering 
+   - Storage 
+   - Cache
+categories: Storage
 ---
 
 The project is an algorithm reproduction of the paper "[Automating Distributed Tiered Storage Management in Cluster Computing](https://arxiv.org/pdf/1907.02394.pdf)". In brief, the main idea concept of the prediction is HOW TO GENERATE THE USEFUL DATA OR FEATURE TO THE MODEL. The paper emphasis on how to collect the data, preprocessing, and determine which attribution is useful, then extract them to the features. The model it use is XGBoost, and it says directly. There only 2 hyper parameters matter: one is "the depth" of the tree, the other is "the rounds" of the training. 

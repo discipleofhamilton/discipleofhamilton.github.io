@@ -1,7 +1,11 @@
 ---
 title: On the Importance of Evaluating Storage System's $Cost
 date: 2022-08-03 14:45:03
-tags: 'Auto Tiering Storage'
+tags: 
+   - Auto Tiering 
+   - Storage 
+   - Cache
+categories: Storage
 ---
 
 概說:
