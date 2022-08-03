@@ -145,6 +145,85 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://discipleofhamilton.github.io/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hamilton Chang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hamilton Chang's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/" class="post-title-link" itemprop="url">On the Importance of Evaluating Storage System's $Cost</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-08-03 14:45:03 / Modified: 14:51:50" itemprop="dateCreated datePublished" datetime="2022-08-03T14:45:03+08:00">2022-08-03</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>概說:</p>
+<p>此篇論文提出一個從<strong>成本&#x2F;金錢</strong>層面對儲存系統進行評估的方案，評估對象包含性能等方面。</p>
+<p>貨幣成本應該在儲存系統的<strong>預期壽命內</strong>進行評估，並考慮設備的磨損(wear-out)和更換。</p>
+<p>相關領域研究中，很少有人探討Tiering和Caching在混合儲存系統中的利弊。本文為促進研究，開發了一套冊被映射(device-mapper)目標程式給Linux Kernel，目的是結合SSD和HDD。此套App想在SSD上起到2個作用:</p>
+<ol>
+<li>將SSD作為Cache，並把髒資料(dirty data)異步回寫到HDD中</li>
+<li>將SSD作為主要儲存設備(Tier)</li>
+<li>其他: 其餘目標還有管理冷熱資料在SSD和HDD之間的通用策略</li>
+</ol>
+<p>在儲存系統的案例中，作者觀察業界真實使用情況與自身經驗，總結了以下情況:</p>
+<ol>
+<li>發現在某些工作負載&#x2F;使用情況(workload)，純SSD的方案會在短期內帶來高成本，但長期使用下成本會低得多。</li>
+<li>還有一些情況，用SSD作為Cache比在Tier上作為熱資料的主要儲存設備的成本要低得多。<strong>但剩餘的工作負載皆與之相反。</strong></li>
+</ol>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="https://discipleofhamilton.github.io/2022/07/26/Cost-Effective-Storage-using-Extent-Based-Dynamic-Tiering/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -357,7 +436,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">2</span>
+          <span class="site-state-item-count">3</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
