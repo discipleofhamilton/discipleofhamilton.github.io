@@ -28,9 +28,11 @@
 <meta property="og:description" content="概說: 此篇論文提出一個從成本&#x2F;金錢層面對儲存系統進行評估的方案，評估對象包含性能等方面。 貨幣成本應該在儲存系統的預期壽命內進行評估，並考慮設備的磨損(wear-out)和更換。 相關領域研究中，很少有人探討Tiering和Caching在混合儲存系統中的利弊。本文為促進研究，開發了一套冊被映射(device-mapper)目標程式給Linux Kernel，目的是結合SSD和HDD。">
 <meta property="og:locale" content="en_US">
 <meta property="article:published_time" content="2022-08-03T06:45:03.000Z">
-<meta property="article:modified_time" content="2022-08-03T06:51:50.408Z">
+<meta property="article:modified_time" content="2022-08-03T08:09:29.648Z">
 <meta property="article:author" content="Hamilton Chang">
-<meta property="article:tag" content="Auto Tiering Storage">
+<meta property="article:tag" content="Auto Tiering">
+<meta property="article:tag" content="Storage">
+<meta property="article:tag" content="Cache">
 <meta name="twitter:card" content="summary">
 
 <link rel="canonical" href="https://discipleofhamilton.github.io/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/">
@@ -190,7 +192,16 @@
               <span class="post-meta-item-text">Posted on</span>
               
 
-              <time title="Created: 2022-08-03 14:45:03 / Modified: 14:51:50" itemprop="dateCreated datePublished" datetime="2022-08-03T14:45:03+08:00">2022-08-03</time>
+              <time title="Created: 2022-08-03 14:45:03 / Modified: 16:09:29" itemprop="dateCreated datePublished" datetime="2022-08-03T14:45:03+08:00">2022-08-03</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Storage/" itemprop="url" rel="index"><span itemprop="name">Storage</span></a>
+                </span>
             </span>
 
           
@@ -358,7 +369,9 @@
 
       <footer class="post-footer">
           <div class="post-tags">
-              <a href="/tags/Auto-Tiering-Storage/" rel="tag"># Auto Tiering Storage</a>
+              <a href="/tags/Auto-Tiering/" rel="tag"># Auto Tiering</a>
+              <a href="/tags/Storage/" rel="tag"># Storage</a>
+              <a href="/tags/Cache/" rel="tag"># Cache</a>
           </div>
 
         
@@ -447,9 +460,17 @@
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
-      <div class="site-state-item site-state-tags">
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
         <span class="site-state-item-count">1</span>
-        <span class="site-state-item-name">tags</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
 </div>
