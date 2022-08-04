@@ -160,6 +160,90 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://discipleofhamilton.github.io/2022/08/04/MTCNN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hamilton Chang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hamilton Chang's Blog">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2022/08/04/MTCNN/" class="post-title-link" itemprop="url">MTCNN</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-08-04 15:02:35 / Modified: 16:39:01" itemprop="dateCreated datePublished" datetime="2022-08-04T15:02:35+08:00">2022-08-04</time>
+            </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Face-Detection/" itemprop="url" rel="index"><span itemprop="name">Face Detection</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p><strong>簡要說明 :</strong></p>
+<p>此篇<a target="_blank" rel="noopener" href="https://kpzhang93.github.io/MTCNN_face_detection_alignment/index.html">論文</a>發表於2016年，摘要中簡要提出當前人臉偵測與矯正所遇到的困境，例如 : 複雜環境、人臉姿態、光照、遮擋(occlusions)。作者提出一個利用固有的相關關係來提升效能的深度學習框架(Deep Cascaded Multi-task framework)，此框架採用一個三階段CNN的聯集架構用於預測人臉與五官在圖像中的位置，並且是一個從粗到細的方法。除此之外，作者還提出一項新的online hard sample mining策略，可以在不需手動採養選取的情況下自動提高效能。</p>
+<p><em>補充與理解</em> :</p>
+<p>針對人臉偵測的應用場景來說，我個人認為作者主要把重心放在場景相對複雜的實時動態人臉偵測。我目前的研究項目與應用場景(門禁系統)中其實是相對簡單，傳統人臉檢測方式(Haar, LBP, dlib)在CPU等級是可以符合大多數的應用，但由於我是用於一般家庭的門禁系統，因此對於在檢測方面魯棒性要求要高，才能滿足用戶體驗，傳統方法嚴重受限於場景。</p>
+<p>從摘要中可以得知，作者提出幾個要點 :</p>
+<ol>
+<li>利用人臉特徵與人臉關鍵點的關聯訊息得到效能與準確度提升。</li>
+<li>採用三階段輕量的網路聯集架構，每個階段是從粗到細的過程。</li>
+<li>提出新的online hard sample mining。</li>
+</ol>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2022/08/04/MTCNN/#more" rel="contents">
+                Read more &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
     <link itemprop="mainEntityOfPage" href="https://discipleofhamilton.github.io/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -478,20 +562,20 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">3</span>
+          <span class="site-state-item-count">4</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
           
-        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-count">2</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
             <a href="/tags/">
           
-        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-count">6</span>
         <span class="site-state-item-name">tags</span></a>
       </div>
   </nav>
