@@ -24,16 +24,16 @@ date: 2022-08-03 15:38:29
   - <font face="Times New Roman">Analized the reason why the system on NVIDIA Xavier is slow with Nsight System and NVTX, and improved about 15% performance with changing the way of using TensorRT models</font>
   - <font face="Times New Roman">Ported the CMS from NVIDIA Nano(ARM) to x86 server, packed it into a docker image with a dockerfile, and used a CI/CD to build and deploy it to the Infortrend devices</font>
   - <font face="Times New Roman">Led project AI Service API and project Resource Space</font>
-    - <font face="Times New Roman">Regarded Trition Inference Server as AI model server, picking ONNX, TensorRT, and Python backend</font>
+    - <font face="Times New Roman">Utilized Trition Inference Server with ONNX, TensorRT, and Python backend</font>
     - <font face="Times New Roman">Developed Face Recognition API:</font>
-      1. <font face="Times New Roman">Regarded MTCNN as the basic detection model, providing FaceNet and ArcFace as recognition options</font>
-      2. <font face="Times New Roman">Utilized shared memory to resolve the issue of shared face embeddings database between multi-processes and accelerate the performance about 3 times</font>
-      3. <font face="Times New Roman">Utilized quantization and TensorRT to get 5 times performance</font>
-    - <font face="Times New Roman">Utilized Multi-Stage, delete redundant dependencies, etc. to reduce the docker image size from 13GB to 7Gb</font>
-    - <font face="Times New Roman">Accelerated at least 3 times inference time on general CPU platforms, using TensorFlow Lite with XNNPack</font>
-  - <font face="Times New Roman">Developed Auto Tiering AI model for the Infortrend storage systems and accelerated at least 60% IO performance.</font>
-    - <font face="Times New Roman">Implemented the method from the paper to predict whether the files are accessed in the future period because the specification of predicting a day is too long to get only 80% accuracy maximum</font>
-    - <font face="Times New Roman">Implemented a regression model to predict files' temperature and improve at least 60% IO performance of the storage system</font>
+      - <font face="Times New Roman">Regarded MTCNN as the basic detection model, providing FaceNet and ArcFace as recognition options</font>
+      - <font face="Times New Roman">Utilized shared memory to resolve the issue of shared face embeddings database between multi-processes and accelerate the performance about 3 times</font>
+      - <font face="Times New Roman">Utilized quantization and TensorRT to get 5 times performance</font>
+    - <font face="Times New Roman">Utilized Multi-Stage, deleted redundant dependencies, etc. to reduce half docker image size</font>
+    - <font face="Times New Roman">Reduced 3 times inference time on general CPU platforms, using TensorFlow Lite with XNNPack</font>
+  - <font face="Times New Roman">Developed an auto-tiered model to improve IO performance by 60 % on Infortrend storage systems</font>
+    - <font face="Times New Roman">Implemented a model to predict whether files are accessed in the next period, but the accuracy only gets 80% at most if the next period is a day</font>
+    - <font face="Times New Roman">Developed a regression model to predict the heat of files and improve at least 60% IO performance of the storage system</font>
 
 - <font size=4 face="Times New Roman">**Patere Technologies, Inc.**, Taipei, Taiwan</font><img src=".\assets\patere.png" align='right' height="15%" width="15%"/>
 
