@@ -5,7 +5,7 @@ date: 2022-08-03 15:38:29
 
 <font size=5 face="Times New Roman">**Chang Huai-Yuan**</font>
 
-<font face="Times New Roman">New Taipei, Taiwan  -  (+886) 0934027001  -  hamiltonchangwork@gmail.com / hamiltonchang@pku.edu.cn</font>
+<font face="Times New Roman">Email: hamiltonchangwork"at"gmail.com / hamiltonchang"at"pku.edu.cn</font>
 
 <!-- <font face="Times New Roman">**Applied Position: Computer Vision and C++ Engineer**</font> -->
 
