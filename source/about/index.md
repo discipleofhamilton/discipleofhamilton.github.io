@@ -21,18 +21,19 @@ date: 2022-08-03 15:38:29
 
   <font face="Times New Roman">**AI Research and Develop Engineer**, May.2021-now</font>
 
-  - <font face="Times New Roman">Analized the reason why the system on NVIDIA Xavier is slow with Nsight System and NVTX, and improved about 15% performance with changing the way of using TensorRT models</font>
-  - <font face="Times New Roman">Ported the CMS from NVIDIA Nano(ARM) to x86 server, packed it into a docker image with a dockerfile, and used a CI/CD to build and deploy it to the Infortrend devices</font>
+  <!-- - <font face="Times New Roman">Analized the reason why the system on NVIDIA Xavier is slow with Nsight System and NVTX</font> -->
+  <!-- - <font face="Times New Roman">Ported the CMS from NVIDIA Nano(ARM) to x86 server, packed it into a docker image with a dockerfile, and used a CI/CD to build and deploy it to the Infortrend devices</font> -->
   - <font face="Times New Roman">Led project AI Service API and project Resource Space</font>
     - <font face="Times New Roman">Utilized Trition Inference Server with ONNX, TensorRT, and Python backend</font>
     - <font face="Times New Roman">Developed Face Recognition API:</font>
       - <font face="Times New Roman">Regarded MTCNN as the basic detection model, providing FaceNet and ArcFace as recognition options</font>
-      - <font face="Times New Roman">Utilized shared memory to resolve the issue of shared face embeddings database between multi-processes and accelerate the performance about 3 times</font>
+      - <font face="Times New Roman">Used shared memory to solve the issue of multi-processes shared face database issues and improved performance by 3 times</font>
       - <font face="Times New Roman">Utilized quantization and TensorRT to get 5 times performance</font>
     - <font face="Times New Roman">Utilized Multi-Stage, deleted redundant dependencies, etc. to reduce half docker image size</font>
     - <font face="Times New Roman">Reduced 3 times inference time on general CPU platforms, using TensorFlow Lite with XNNPack</font>
   - <font face="Times New Roman">Developed an auto-tiered model to improve IO performance by 60 % on Infortrend storage systems</font>
-    - <font face="Times New Roman">Implemented a model to predict whether files are accessed in the next period, but the accuracy only gets 80% at most if the next period is a day</font>
+    - <font face="Times New Roman">Developed a classification model to predict if files are accessed in the next period</font>
+    - <font face="Times New Roman">Accuracy of the classification model only gets 80% at most if the next period is a day</font>
     - <font face="Times New Roman">Developed a regression model to predict the heat of files and improve at least 60% IO performance of the storage system</font>
 
 - <font size=4 face="Times New Roman">**Patere Technologies, Inc.**, Taipei, Taiwan</font><img src=".\assets\patere.png" align='right' height="15%" width="15%"/>
@@ -60,7 +61,7 @@ date: 2022-08-03 15:38:29
   - <font face="Times New Roman">Involved in Hover 2 drone development</font>
     - <font face="Times New Roman">Researched and tested correlate filter and Template Matching Algorithms, and analyzed them</font>
     - <font face="Times New Roman">Implemented, maintained and optimized long-term object tracking function</font>
-    - <font face="Times New Roman">Increased the success rate of object tracking function by 15%, and CPU utility decreased by 5% through adding constraints and modifying object re-identification strategy</font>
+    - <font face="Times New Roman">Improved by 15% tracking success rate and reduced by 5% CPU utility through adding constraints and modifying object re-identification strategy</font>
 
 ## <font face="Times New Roman">Competition</font>
 
@@ -80,14 +81,14 @@ date: 2022-08-03 15:38:29
 
   - <font face="Times New Roman">Divided the tracker into three states: target selection, track and retrieval, to facilitate the design and implementation</font>
   - <font face="Times New Roman">Designed and Developed several strategies to achieve real-time and stable long-term person tracking, such as skip-frame, conflict detection, tracker constraint scheme, and exclud e target range</font>
-  - <font face="Times New Roman">Tracking successful rate is 79.02%. Recall is 77.54%. FPS on computer CPU is 12.87</font>
+  - <font face="Times New Roman">**Tracking successful rate is 79.02%. Recall is 77.54%. FPS is 12.87 on Intel i7-6700k CPU**</font>
 
 - <font size=4 face="Times New Roman">**2D Anime Charactors Recognition**</font>
 
   <font face="Times New Roman">**Team Leader**, May 2018 - June 2018</font>
 
   - <font face="Times New Roman">To recognize the anime character by the same character but different styles</font>
-  - <font face="Times New Roman">Utilized the trained  LBPcascade to detect anime faces and recognize ones with the fine-tuned Inception-v3 model.</font>
+  - <font face="Times New Roman">Utilized the trained  LBPcascade to detect anime faces and recognized ones with the fine-tuned Inception-v3 model.</font>
   - <font face="Times New Roman">**TOP1 result is 73.25%**</font>
 
 - <font size=4 face="Times New Roman">**Scheme Interpreter Implemented in C++**</font>
@@ -101,8 +102,8 @@ date: 2022-08-03 15:38:29
 
    <font face="Times New Roman">**Team Leader**,  Feb. 2016 - Nov. 2016</font>
 
-   - <font face="Times New Roman">Learned and used the technologies of face recognition and pre-processing, and balanced the security and practicality of the system</font>
-   - <font face="Times New Roman">Built the software system containing face key(database) and face recognition, and ported it to Raspberry Pi.  It sends a signal to relay to control the electromagnetic induction door lock</font>
+   - <font face="Times New Roman">Learned and used the technologies and pre-processing of face recognition, and balanced the security and practicality of the system</font>
+   - <font face="Times New Roman">Built the software system containing face key(database) and face recognition, and ported it to Raspberry Pi</font>
 
 ## <font face="Times New Roman">Skills</font>
 
