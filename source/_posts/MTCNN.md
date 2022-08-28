@@ -97,9 +97,9 @@ MTCNN的CNN網路結構是參考[A Convolutional Neural Network Cascade for Face
 
    針對分類問題，理論上希望錯誤率越低越好，但通常不會直接使用錯誤率作為損失函數，原因是單看錯誤率無法比較模型之間的差異，因為可能出現相同錯誤率但不同準確度的情形。造成在進行模型訓練時難以得到較好的學習方向，當用錯誤率判別時，無法得知目前模型的錯誤是多或是少，因此也不知道最佳模型的要往哪個方向與更新多少。
 
-   cross-entropy loss function本身在loss function的兩大類(regression/classification)中屬於分類，且主要用於二分類問題，其中的entropy是**接收的所有資訊所包含訊息的平均量**，用來察看資料的混亂度與不確定性。cross-entropy的含意是真實類別的判斷正確機率，可以得知當cross-entropy越小模型的效果越好([詳細說明1](https://medium.com/@chih.sheng.huang821/%E6%A9%9F%E5%99%A8-%E6%B7%B1%E5%BA%A6%E5%AD%B8%E7%BF%92-%E5%9F%BA%E7%A4%8E%E4%BB%8B%E7%B4%B9-%E6%90%8D%E5%A4%B1%E5%87%BD%E6%95%B8-loss-function-2dcac5ebb6cb)、[詳細說明2](https://medium.com/@chungyizhen/cross-entropy%E7%9A%84%E7%9B%B4%E8%A7%80%E7%90%86%E8%A7%A3-82e525e3780c))。
+   cross-entropy loss function本身在loss function的兩大類(regression/classification)中屬於分類，且主要用於二分類(Binary)和多分類問題。其中的entropy是**接收的所有資訊所包含訊息的平均量**，用來察看資料的混亂度與不確定性。softmax激活函數+cross-entropy的含意是真實類別的判斷正確機率，可以得知當cross-entropy越小模型的效果越好([詳細說明1](https://medium.com/@chih.sheng.huang821/%E6%A9%9F%E5%99%A8-%E6%B7%B1%E5%BA%A6%E5%AD%B8%E7%BF%92-%E5%9F%BA%E7%A4%8E%E4%BB%8B%E7%B4%B9-%E6%90%8D%E5%A4%B1%E5%87%BD%E6%95%B8-loss-function-2dcac5ebb6cb)、[詳細說明2](https://medium.com/@chungyizhen/cross-entropy%E7%9A%84%E7%9B%B4%E8%A7%80%E7%90%86%E8%A7%A3-82e525e3780c))。
 
-   近年在CNNs中較常見的Softmax loss也是基於cross-entropy的變形，因此我有個疑問**為何作者只單純使用cross-entropy而非Sigmoid或是Softmax + cross-entropy**。
+   近年在CNNs中較常見的Softmax loss也就是基於softmax激活函數+cross-entropy與其變形。
 
 2. **Bounding box regression** : 
 
