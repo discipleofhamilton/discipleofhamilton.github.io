@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>NUEiP 自動登入</title>
+</head>
+<body>
+  <p>自動登入中，請稍候…</p>
+  <form id="loginForm" method="POST" action="https://cloud.nueip.com/line/bot/punch_clock/clock_out">
+    <input type="hidden" name="inputCompany" id="inputCompany">
+    <input type="hidden" name="inputID" id="inputID">
+    <input type="hidden" name="inputPassword" id="inputPassword">
+  </form>
+
+  <script>
+    function getParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+
+    document.getElementById('inputCompany').value = getParam('company');
+    document.getElementById('inputID').value = getParam('account');
+    document.getElementById('inputPassword').value = getParam('password');
+
+    document.getElementById('loginForm').submit();
+  </script>
+</body>
+</html>
