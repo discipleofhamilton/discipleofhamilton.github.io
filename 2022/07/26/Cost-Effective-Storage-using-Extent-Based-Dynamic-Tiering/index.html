@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"discipleofhamilton.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Here is the paper. 市場上雖然有許多基於SSD的multi-tier的storage解決方案，但如何配置最佳的設備給每個tier，來達到用最小的花費完成最好的performance。 本文提出的方法叫 “Extent-based Dynamic Tiering (EDT) Solution”。首先什麼是extent? 一個extent指的是一段連續的儲存空間，而一個檔案的物理大小">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cost Effective Storage using Extent Based Dynamic Tiering">
+<meta property="og:url" content="https://discipleofhamilton.github.io/2022/07/26/Cost-Effective-Storage-using-Extent-Based-Dynamic-Tiering/index.html">
+<meta property="og:site_name" content="Hamilton Chang&#39;s Blog">
+<meta property="og:description" content="Here is the paper. 市場上雖然有許多基於SSD的multi-tier的storage解決方案，但如何配置最佳的設備給每個tier，來達到用最小的花費完成最好的performance。 本文提出的方法叫 “Extent-based Dynamic Tiering (EDT) Solution”。首先什麼是extent? 一個extent指的是一段連續的儲存空間，而一個檔案的物理大小">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i.imgur.com/yz0ZaYl.png">
+<meta property="og:image" content="https://i.imgur.com/dPjZa8E.png">
+<meta property="article:published_time" content="2022-07-26T13:50:20.000Z">
+<meta property="article:modified_time" content="2025-05-19T16:51:24.280Z">
+<meta property="article:author" content="Hamilton Chang">
+<meta property="article:tag" content="Auto Tiering">
+<meta property="article:tag" content="Storage">
+<meta property="article:tag" content="Cache">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.imgur.com/yz0ZaYl.png">
+
+<link rel="canonical" href="https://discipleofhamilton.github.io/2022/07/26/Cost-Effective-Storage-using-Extent-Based-Dynamic-Tiering/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Cost Effective Storage using Extent Based Dynamic Tiering | Hamilton Chang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hamilton Chang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://discipleofhamilton.github.io/2022/07/26/Cost-Effective-Storage-using-Extent-Based-Dynamic-Tiering/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hamilton Chang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hamilton Chang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Cost Effective Storage using Extent Based Dynamic Tiering
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-07-26 21:50:20" itemprop="dateCreated datePublished" datetime="2022-07-26T21:50:20+08:00">2022-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-20 00:51:24" itemprop="dateModified" datetime="2025-05-20T00:51:24+08:00">2025-05-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Storage/" itemprop="url" rel="index"><span itemprop="name">Storage</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>Here is the <a target="_blank" rel="noopener" href="https://www.usenix.org/legacy/event/fast11/tech/full_papers/Guerra.pdf">paper</a>.</p>
+<p>市場上雖然有許多基於SSD的multi-tier的storage解決方案，但如何配置最佳的設備給每個tier，來達到用最小的花費完成最好的performance。</p>
+<p>本文提出的方法叫 “Extent-based Dynamic Tiering (EDT) Solution”。首先什麼是extent? 一個extent指的是一段連續的儲存空間，而一個檔案的物理大小一定是一個extent容量的整數倍；其次，EDT又是用哪些方法來完成上述的目標? 總共有兩個關鍵元件作為基礎，以下是簡述:</p>
+<ol>
+<li><a href="#EDT-CA">A Configuration Adviser (EDT-CA)</a>: 決定購買和安裝合適的混合storage device來滿足一個給定工作負載&#x2F;應用場景的最低成本。</li>
+<li><a href="EDT-DTM">A Dynamic Tier Manager (EDT-DTM)</a>: 在當前給定的工作負載&#x2F;應用場景中，EDT-DTM運行在configured storage system，通過動態地搬移extent (fixed-size portions of a volume)來將資料放置在最合適的tier上。</li>
+</ol>
+<span id="more"></span>
+<h2 id="Extent-based-Tiering"><a href="#Extent-based-Tiering" class="headerlink" title="Extent-based Tiering"></a>Extent-based Tiering</h2><p>回過頭來看EDT的原型，Extent-based Tiering。研究中表明當extent的大小越小，資料擺放的就會更高效。但會帶來metadata[^2] (元數據、後設資料)的開銷，而metadata的目的是持續追蹤extent的位置和其他統計資料，並且此開銷會隨著extent大小越小而增加。</p>
+<p><strong>THE PROBLEM IS HOW TO GET AN ACCEPTABLE EXTENT SIZE?</strong></p>
+<h2 id="Dynamic-Tiering"><a href="#Dynamic-Tiering" class="headerlink" title="Dynamic Tiering"></a>Dynamic Tiering</h2><p>什麼又是Dynamic Tiering? 並且它如何與Extent-based Tiering融合成EDT?</p>
+<ul>
+<li>作用: 為了處理extent跨tier移動的時間範圍&#x2F;尺度。(Dynamic Tiering is to deal with the time scale at which extents move across tiers.)</li>
+</ul>
+<h2 id="EDT"><a href="#EDT" class="headerlink" title="EDT"></a>EDT</h2><p><strong>$EDT &#x3D; EDT_{CA} + EDT_{DTM}$</strong></p>
+<p>EDT能執行requests來不間斷地在storage devices間移動extent。<font color="red">通過同時採用EDT-CA和EDT-DTM來最小化成本，其中EDT-CA用來最小化購買成本(acquisition cost)，而EDT-DTM則是最小化運行成本(operating cost)</font>。</p>
+<p><img src="https://i.imgur.com/yz0ZaYl.png" alt="EDT_system_arch"></p>
+<h3 id="EDT-CA"><a href="#EDT-CA" class="headerlink" title="EDT-CA"></a>EDT-CA</h3><p>EDT-CA是一個配置建議者(Configuration Adviser)的角色，作用是給出正確的儲存設備數量在每個tier上來安裝storage system。</p>
+<p>通過<font color="red">模擬</font>在Tier中放置的每個extent來估計滿足工作負載所需的不同Tier中的資源，進而滿足性能需求的同時最小化其生產成本。接著在每個epoch[^1]: 中重複此過程，並基於各自extents在該epoch的性能需求，將extents分派到其最低成本的tier上。此模擬結束後，EDT-CA會根據所有epoch中的每個tier的最大設備需求數量給出一個設備集(the set of devices)。</p>
+<h3 id="EDT-DTM"><a href="#EDT-DTM" class="headerlink" title="EDT-DTM"></a>EDT-DTM</h3><p>EDT-DTM是一個動態層管理者(Dynamic Tier Manager)，運行在一個正在執行的系統，並持續管理Tier間extent的擺放。它蒐集extent level的統計數據並估計在不同tiers中extent的資源消耗，之後用於規劃與執行資料的搬移&#x2F;遷移(data movement&#x2F;migration)。</p>
+<p>EDT-DTM中有幾個機制和演算法幫助它完成上述目標:</p>
+<ul>
+<li>節流矯正機制(throttling correction mechanism): EDT-DTM實現一個阻礙矯正機制來確保滿足隨時間變化的性能需求，它會持續監控array performance，當性能節流(throttle)被偵測到，則將extent擺放到新的位置以恢復性能。</li>
+<li>擺放演算法(Placement Algorithm): 目的是擺放每個extent到滿足性能需求的前提下，耗能最低(lowest-energy)的Tier上。並且通過將同一個Tier上的extents合併到少數的設備上，來降低沒有在使用的設備的功耗，進而最小化能量的使用。</li>
+</ul>
+<p>以上兩個演算法都有用到資料遷移模組(Migration Module)。</p>
+<h3 id="Common-Component"><a href="#Common-Component" class="headerlink" title="Common Component"></a>Common Component</h3><p>EDT是由兩個主要角色EDT-CA和EDT-DTM所構成，其中包含各個元件，當中有兩個元件被EDT-CA和EDT-DTM共享來蒐集討計數據和計算資源消耗:</p>
+<ol>
+<li>Data Collector</li>
+<li>Resource Consumption Model</li>
+</ol>
+<h4 id="Data-Collector"><a href="#Data-Collector" class="headerlink" title="Data Collector"></a>Data Collector</h4><p>Data Collector會收到IO completion的資訊，包含傳送大小、回應時間、Logical block address(LBA)[^3]、IO產生的Volume ID和IO執行在哪個array。</p>
+<p>Collector將每個I&#x2F;O的(LBA，Volume id)pairs映射到系統中唯一的extent，並為每個extent編譯隨機I&#x2F;O的數量和傳輸的字節數(bytes)。然後週期性地(在本文的實現中是每分鐘)計算每個extent的瞬時帶寬和隨機IOPS以及指數加權移動平均。除了extent的統計數據外，Collector還會聚集每個array的統計數據。它將每個I&#x2F;O映射到它的array，並編譯它的IOPS和平均響應時間。 EDT-DTM使用這些量測數據來確定array上的I&#x2F;O是否被節流。對於一個非常大的系統，由Data Collector收集的資料量可能非常大。若因此產生問題，可以將extent大小做得更大，以減少統計數據量。</p>
+<h4 id="Resource-Consumption-Model"><a href="#Resource-Consumption-Model" class="headerlink" title="Resource Consumption Model"></a>Resource Consumption Model</h4><p>Resource Consumption Model用來決定對該extent而言，把它放在哪個Tier最有效率。它利用該extent的統計數據來估計此extent被放置在一個給定類型(type)的設備中時的資源消耗，並根據在設備層級(device level)觀察到的容量與性能需求來分配資源。而任何工作負載的優化，如資料去重(deduplication)、壓縮(compression)和緩存(caching)等，在此model中不需要考慮，因為它們的影響會被捕捉在使用統計數據(usage statistics)中。</p>
+<p>單一extent所消耗的資源只會有兩個維度: 容量(capacity)與性能(performance)。若一個extent的大小視為$E_{C}$；性能需求視為$E_{P}$，從前面的epochs的random IOPS rate (RIOR)和bandwidth量測而得。</p>
+<p>在設備$D$中extent所需的容量占比為:<br>$$<br>RC(E_{C},D)&#x3D;\frac{Capacity\ required\ by\ extent}{Total\ space\ in\ device}<br>$$<br>性能:<br>$$<br>RC(E_{P},D)&#x3D;RIOR\times Rtime+Bandwidth\times Xtime<br>$$<br>其中各自的定義為:</p>
+<ul>
+<li>$RIOR$: random IOs一秒傳輸到一個extent的數量(IO&#x2F;s)</li>
+<li>$Rtime$: 該設備預期的回應時間(s&#x2F;IO)</li>
+<li>$Bandwidth$: 該設備的bandwidth規格(MB&#x2F;s)</li>
+<li>$Xtime$: 平均傳輸時間(s&#x2F;MB)</li>
+</ul>
+<p><strong>一個extent的總體資源需求是容量使用比例和行能使用比例對最大值</strong>:<br>$$<br>RC(E,D)&#x3D;max(RC(E_{C},D), RC(E_{P},D))<br>$$</p>
+<p><img src="https://i.imgur.com/dPjZa8E.png" alt="EDT_lowest_cost_tier_for_ext"></p>
+<h3 id="Configuration-Adviser"><a href="#Configuration-Adviser" class="headerlink" title="Configuration Adviser"></a>Configuration Adviser</h3><p>在<a href="#EDT-CA">EDT-CA</a>的章節中有概略說明它的作用，本章將詳細說明它如何提出最優配置。</p>
+<p>首先它是上述的Data Collector和Resource Consumption Model的基礎之上建構而成，而論文提出一個輕量的啟發式方法來達到低成本的extent擺放:</p>
+<ol>
+<li><p>Binning: 首先定義出$extent\ cost(E,D)&#x3D;cost(D)\times RC(E,D)$，利用此條公式可以把extent擺放在最小成本且符合性能需求的Tier上，並對所有extent進行成本的計算，再將extent分割成每個Tier中的一個bin。</p>
+</li>
+<li><p>Sizing a bin: </p>
+<ul>
+<li><p>每個bin的性能與容量資源消耗定義:</p>
+<ul>
+<li>
+      $$
+       \left\lbrace
+           \begin{aligned}
+               RC_{P}=\sum RC(E_{P},D),\ \forall E \\
+               RC_{C}=\sum RC(E_{C},D),\ \forall E
+           \end{aligned}
+       \right.
+       $$
+       
+</li>
+<li><p>上述兩者的最大值將給定總體bin的資源需求與對此bin類型來說所需要設備四捨五入後的近似整數。</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p>此過程在每個epoch中獨立且重複地運行，為了確保在該epoch中每個Tier最小成本的設備數量。</p>
+</li>
+<li><p>通過分配所有epoch中使用的每種類型設備的最大數量來實現最終配置。例如: </p>
+<ul>
+<li>epoch $t_{0}$: 2 Type $D$ devices and 1 Type $D^{\prime}$ device</li>
+<li>epoch $t_{1}$: 1 Type $D$ device and 2 Type $D^{\prime}$ devices</li>
+<li>final: 2 Type $D$ devices and 2 Type $D^{\prime}$ devices</li>
+</ul>
+</li>
+</ol>
+<h3 id="Dynamic-Tier-Manager"><a href="#Dynamic-Tier-Manager" class="headerlink" title="Dynamic Tier Manager"></a>Dynamic Tier Manager</h3><p>在<a href="#EDT-DTM">EDT-DTM</a>章節中有簡述它的作用與內部機制，此章節將針對整體具體作用與內部機制進行詳細說明。</p>
+<p>EDT-DTM除了有Data Collector和Resource Consumption Model之外還有3個新模組來幫助它持續優化extent的擺放:</p>
+<ol>
+<li><a href="#Tiering-and-Consolidation-Algorithms">Tiering and Consolidation module</a></li>
+<li><a href="#Throttling-Detector-and-Corrector">Throttling Detector&#x2F;Corrector module</a></li>
+<li><a href="Migrator">Migrator module</a></li>
+</ol>
+<h4 id="Tiering-and-Consolidation-Algorithms"><a href="#Tiering-and-Consolidation-Algorithms" class="headerlink" title="Tiering and Consolidation Algorithms"></a>Tiering and Consolidation Algorithms</h4><p>Tiering and Consolidation (TAC)演算法在每個epoch的結尾時進行extent的擺放，目的是滿足extent的性能需求和最小化動態的系統能源。這樣的節能佈局既可以利用異構底層硬體(SSD、SAS和SATA驅動器)的優勢(即性能或每瓦特容量)，也可以在可能的情況下將數據整合到更少的設備中，並關閉未使用的設備。</p>
+<p>與配置問題(Configuration Problem)相同的是，功率最小化布置問題(placement for power minimization)也是NP-Hard問題。為了解決功率最小化布置問題，TAC需要兩個輸入: </p>
+<ol>
+<li>當前的隨機IO rate和積極運行的系統中每個extent的bandwidth</li>
+<li>IO Size in bytes和在儲存系統中每個array的隨機IO rate與bandwidth capacity</li>
+</ol>
+<p>利用上述兩步驟產生的新的extent布局還適應工作負載的變化。例如:</p>
+<ol>
+<li><p>Tiering:</p>
+<p>對每個extent $E$和設備類型 $D$計算配置extent到該設備的功率&#x2F;能量負荷比值(fraction power burden):<br>$$<br>extent\ power(E,D)&#x3D;power(D)\times RC(E,D)<br>$$<br>通過上述公式，TAC可把extent擺放在符合其性能與最低功耗需求的Tier上，並且此步驟可以通過合併(consolidation)來降低活躍功率。此外，將extent分配給Tier是在本地與一個extent接一個extent的基礎上執行的，而與該Tier的總體性能需求或可用空間無關。</p>
+</li>
+<li><p>Consolidation: </p>
+<p>分配給每個Tier的extent是通過它們的$RC$值進行排序，並使用First Fit遞減啟發式(First Fit Decreasing heuristic)將extent放置在array中，這是extent packing一種很好最逼近優解決方案的演算法。當extent已經分配到考慮中的某個Tier，並且extent超過其可用性能或Tier耗盡array中空間時，extent列表中剩餘的extent將降級到具有該extent下一個較低功耗負擔的Tier。</p>
+<p>為所有的Tier重複上述的打包過程，合併extents到一個Tier中最小數量的array，而已經在正確Tier上和在此epoch上會保持啟動在一個array上的extent會保留它們在前一個epoch的位置，從而節省遷移成本。而在extent布局&#x2F;擺放中所有未使用的arrays會被設置為低功率的狀態，以節省電力&#x2F;能量。</p>
+</li>
+</ol>
+<h4 id="Throttling-Detector-and-Corrector"><a href="#Throttling-Detector-and-Corrector" class="headerlink" title="Throttling Detector and Corrector"></a>Throttling Detector and Corrector</h4><p>儘管TAC機制能夠實現動態性能和功率優化，但非預期的負載和工作集(working set)的變化會突然改變extent的性能要求。追蹤性能的變化相當困難，尤其當某個extent的IO rate上升時。位於低性能Tier的extent無法表現出高的I&#x2F;O rate，這將導致對extent的真實IOPS需求進行節流，人為地將其限制在一個較低的值。而Throttling Detector通過監控每分鐘每個活躍的array的平均回應時間來克服了上述的限制。</p>
+<p>若一個array的IO平均回應時間表明在該array中出現不需要(udesirably)的high request queue，則EDT將判定該array正在限制(throttling)應用程式的真實IOPS需求並造成延遲。當偵測到節流時，由TAC驅動的待處理的(pending)資料前移動作都立即暫停，並且EDT-DTM切換到節流糾正(throttling correction)模式進行回復。</p>
+<p>為了選擇目標array(s)，第一步先從最有可能被遷移到的Tier開始，並檢查哪個已經激活(正在被高度使用)的array可以吸收新的extent。若沒有array可以吸收，則c會考慮在該tier中沒有被使用且處於可被使用狀態的arrays；若最優的Tier無法放置該extent，則在下一個具有更高功率負荷的Tier上嘗試相同方法。</p>
+<h4 id="Migrator"><a href="#Migrator" class="headerlink" title="Migrator"></a>Migrator</h4><p>Migrator用來解決TAC和Throttling algorithm發出的資料移動請求，並通過比較新舊extent的布局和識別那些extents需要搬移。雖然資料搬移可以緩解節流問題，但同時也會造成額外的IO阻塞(IO traffic)，因此必須小心處理以免影響前台(foreground)IO的性能。</p>
+<p>Migrator通過以下幾點來達成損耗與提升之間的平衡:</p>
+<ol>
+<li>每個設備同時只允許進行一次資料搬移</li>
+<li>在發布搬移的請求前，Migrator只有在源(source)設備和目標(target)設備都可用時才允許請求，從而執行添加控制；若沒有允許，則該請求會重新回到佇列中，並拿取下一個請求。</li>
+<li>Migrator通過分解一個extent成更小的傳輸單位，並調整(pace)傳輸請求的速度以符合可用或需要的IO rate最小值來控制自身前跟資料遷移相關的資源消耗。</li>
+</ol>
+<h2 id="Definition"><a href="#Definition" class="headerlink" title="Definition"></a>Definition</h2><p>[^1]: The intervals on the order of minutes or hours that plan extent movement<br>[^2]: 描述其他資料資訊的資料<br>[^3]: It is  a common scheme used for specifying the location of blocks of data stored on computer storage devices, generally secondary storage systems such as HDD.</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Auto-Tiering/" rel="tag"># Auto Tiering</a>
+              <a href="/tags/Storage/" rel="tag"># Storage</a>
+              <a href="/tags/Cache/" rel="tag"># Cache</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/07/26/Auto-Tiering/" rel="prev" title="Auto-Tiering">
+      <i class="fa fa-chevron-left"></i> Auto-Tiering
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/" rel="next" title="On the Importance of Evaluating Storage System's $Cost">
+      On the Importance of Evaluating Storage System's $Cost <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Extent-based-Tiering"><span class="nav-number">1.</span> <span class="nav-text">Extent-based Tiering</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Dynamic-Tiering"><span class="nav-number">2.</span> <span class="nav-text">Dynamic Tiering</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#EDT"><span class="nav-number">3.</span> <span class="nav-text">EDT</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#EDT-CA"><span class="nav-number">3.1.</span> <span class="nav-text">EDT-CA</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#EDT-DTM"><span class="nav-number">3.2.</span> <span class="nav-text">EDT-DTM</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Common-Component"><span class="nav-number">3.3.</span> <span class="nav-text">Common Component</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Data-Collector"><span class="nav-number">3.3.1.</span> <span class="nav-text">Data Collector</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Resource-Consumption-Model"><span class="nav-number">3.3.2.</span> <span class="nav-text">Resource Consumption Model</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Configuration-Adviser"><span class="nav-number">3.4.</span> <span class="nav-text">Configuration Adviser</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Dynamic-Tier-Manager"><span class="nav-number">3.5.</span> <span class="nav-text">Dynamic Tier Manager</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Tiering-and-Consolidation-Algorithms"><span class="nav-number">3.5.1.</span> <span class="nav-text">Tiering and Consolidation Algorithms</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Throttling-Detector-and-Corrector"><span class="nav-number">3.5.2.</span> <span class="nav-text">Throttling Detector and Corrector</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Migrator"><span class="nav-number">3.5.3.</span> <span class="nav-text">Migrator</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Definition"><span class="nav-number">4.</span> <span class="nav-text">Definition</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hamilton Chang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hamilton Chang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

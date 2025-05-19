@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"discipleofhamilton.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="概說: 此篇論文提出一個從成本&#x2F;金錢層面對儲存系統進行評估的方案，評估對象包含性能等方面。 貨幣成本應該在儲存系統的預期壽命內進行評估，並考慮設備的磨損(wear-out)和更換。 相關領域研究中，很少有人探討Tiering和Caching在混合儲存系統中的利弊。本文為促進研究，開發了一套冊被映射(device-mapper)目標程式給Linux Kernel，目的是結合SSD和HDD。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="On the Importance of Evaluating Storage System&#39;s $Cost">
+<meta property="og:url" content="https://discipleofhamilton.github.io/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/index.html">
+<meta property="og:site_name" content="Hamilton Chang&#39;s Blog">
+<meta property="og:description" content="概說: 此篇論文提出一個從成本&#x2F;金錢層面對儲存系統進行評估的方案，評估對象包含性能等方面。 貨幣成本應該在儲存系統的預期壽命內進行評估，並考慮設備的磨損(wear-out)和更換。 相關領域研究中，很少有人探討Tiering和Caching在混合儲存系統中的利弊。本文為促進研究，開發了一套冊被映射(device-mapper)目標程式給Linux Kernel，目的是結合SSD和HDD。">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2022-08-03T06:45:03.000Z">
+<meta property="article:modified_time" content="2025-05-19T16:51:24.284Z">
+<meta property="article:author" content="Hamilton Chang">
+<meta property="article:tag" content="Auto Tiering">
+<meta property="article:tag" content="Storage">
+<meta property="article:tag" content="Cache">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="https://discipleofhamilton.github.io/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>On the Importance of Evaluating Storage System's $Cost | Hamilton Chang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hamilton Chang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://discipleofhamilton.github.io/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hamilton Chang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hamilton Chang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          On the Importance of Evaluating Storage System's $Cost
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-08-03 14:45:03" itemprop="dateCreated datePublished" datetime="2022-08-03T14:45:03+08:00">2022-08-03</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-20 00:51:24" itemprop="dateModified" datetime="2025-05-20T00:51:24+08:00">2025-05-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Storage/" itemprop="url" rel="index"><span itemprop="name">Storage</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>概說:</p>
+<p>此篇論文提出一個從<strong>成本&#x2F;金錢</strong>層面對儲存系統進行評估的方案，評估對象包含性能等方面。</p>
+<p>貨幣成本應該在儲存系統的<strong>預期壽命內</strong>進行評估，並考慮設備的磨損(wear-out)和更換。</p>
+<p>相關領域研究中，很少有人探討Tiering和Caching在混合儲存系統中的利弊。本文為促進研究，開發了一套冊被映射(device-mapper)目標程式給Linux Kernel，目的是結合SSD和HDD。此套App想在SSD上起到2個作用:</p>
+<ol>
+<li>將SSD作為Cache，並把髒資料(dirty data)異步回寫到HDD中</li>
+<li>將SSD作為主要儲存設備(Tier)</li>
+<li>其他: 其餘目標還有管理冷熱資料在SSD和HDD之間的通用策略</li>
+</ol>
+<p>在儲存系統的案例中，作者觀察業界真實使用情況與自身經驗，總結了以下情況:</p>
+<ol>
+<li>發現在某些工作負載&#x2F;使用情況(workload)，純SSD的方案會在短期內帶來高成本，但長期使用下成本會低得多。</li>
+<li>還有一些情況，用SSD作為Cache比在Tier上作為熱資料的主要儲存設備的成本要低得多。<strong>但剩餘的工作負載皆與之相反。</strong></li>
+</ol>
+<span id="more"></span>
+
+<h2 id="Cost-Model"><a href="#Cost-Model" class="headerlink" title="Cost Model"></a>Cost Model</h2><p>成本: 包含能源和電力成本，以及設備更換本等等。</p>
+<p>成本模型(Cost Model): 由13條公式計算得出一個數值，並用此數值做為參考來比較不同情況下成本的高低。其中將以下幾點參數&#x2F;數值化後，再依照定義的公式進行計算:</p>
+<ol>
+<li>儲存設備的數量(the number of storage device)</li>
+<li>未來成本估計的時間因素($\alpha$)</li>
+<li>購買成本: 單位容量的價格$\times$總容量</li>
+<li>能源和電力價格</li>
+<li>Endurance Cost: 每台儲存設備的價格$\times$該台設備的折損率</li>
+<li>定義SSD與HDD的磨損程度與使用期限</li>
+<li>固定提供服務的成本(Service Cost): 主電源、冷氣等等</li>
+</ol>
+<p>13條公式:</p>
+<ol>
+<li><p>$1\leq i \leq n,(n:the\ number\ of\ storage\ devices)$</p>
+</li>
+<li><p>$1 \leq \alpha, (time\ factor,\ default&#x3D;1)$</p>
+</li>
+<li><p>$Cost&#x3D;Purchase+TCO$</p>
+</li>
+<li><p>$Purchase&#x3D;\sum_{i&#x3D;1}^{n}{C_{dev_{i}}}$</p>
+</li>
+<li><p>$C_{dev_{i}}&#x3D;Normalized\ Price_{dev_{i}}\times Capacity_{dev_{i}}$</p>
+</li>
+<li><p>$TCO&#x3D;\alpha \times (C_{energy}+C_{power}+C_{endurance})+C_{service}$</p>
+</li>
+<li><p>$C_{energy}&#x3D;Lookup_{LIPA}(Amount_{energy})$</p>
+</li>
+<li><p>$C_{power}&#x3D;Lookup_{LIPA}(Amount_{power})$</p>
+</li>
+<li><p>$C_{endurance}&#x3D;\sum_{i&#x3D;1}^{n}{C_{dev_{i}}}$</p>
+</li>
+<li><p>$C_{endurance_{i}}&#x3D;C_{dev_{i}}\times \frac{dev_{i}\ wearout}{Limit_{i}}$</p>
+</li>
+<li>
+    $
+    \left\lbrace
+        \begin{aligned}
+        	writes\ if\ dev_{i}=SSD, \\
+        	\#startstop\ if\ dev_{i}=HDD 
+        \end{aligned}
+        \right.
+    $
+    
+</li>
+<li>
+    $
+    Limit_{i}\ wearout=
+          \left\lbrace
+            \begin{aligned}
+                Limit_{writes}\ if\ dev_{i}=SSD, \\
+                Limit_{cycles}\ if\ dev_{i}=HDD 
+              \end{aligned}
+          \right.
+    $
+    
+</li>
+<li><p>$C_{ser}&#x3D;fixed\ estimation$</p>
+</li>
+</ol>
+<p>公式12和13看得出來，本文對SSD的耐用性及使用極限的設置主要是看寫入的次數，當然，讀取依然會影響其耐用性，所以本文對其進行了簡單的轉換。例如:由讀取引起的寫入就記作$reads&#x2F;10$；而HDD則是看start-stop-cycle作為主要引響因素，並忽略其他。作者基於當時查到的工業規格，SSD能持續寫入36.5TB的資料，而HDD則是能完成300,000 spin up&#x2F;down cycles。</p>
+<h2 id="System"><a href="#System" class="headerlink" title="System"></a>System</h2><p>本文為了將評估與測試簡單化，因此只用一顆SSD和一個HDD組成兩個自己完成的系統，一個是Caching；另一個是Tiering，評估時再加上基於Linux DM “Linear” target的Tiering系統。兩個自己完成的系統支援多個可配置參數:</p>
+<ol>
+<li>Extent Size (ES)</li>
+<li>Promotion&#x2F;Pre-fetching Threshold (PT): Access counts before promoted&#x2F;fetched.</li>
+<li>Maximum Concurrent Migration Limit (MCML)</li>
+</ol>
+<p>此外，以上兩系統有以下四點不同:</p>
+<ol>
+<li>Capacity</li>
+<li>Management Unit</li>
+<li>Data Movement</li>
+<li>Read&#x2F;Write Policy</li>
+</ol>
+<h2 id="Evaluation"><a href="#Evaluation" class="headerlink" title="Evaluation"></a>Evaluation</h2><p>設備:</p>
+<ol>
+<li>兩台相同的Lenovo ThinkCenter電腦上進行測試，每一台上面搭載4GB的RAM和Intel Core-2 Quad 2.66GHz CPU。</li>
+<li>儲存設備(Storage): Intel SSDSA2CW300G3 300GB SSD &amp; Seagate ST32000641AS 2TB HDD，且Linux 3.5.0的kernel運行在獨立的SATA驅動上。</li>
+</ol>
+<p>作者將每電腦連接至一台WattsUP Pro ES的直列式功率計算器來測量能源與電力的損耗。</p>
+<p> 工作負載 &#x2F; 應用場景:</p>
+<ol>
+<li>Web-search trace from UMass Trace Repository</li>
+<li>FIU’s online trace</li>
+</ol>
+<p>作者發現在Filebench的File Server的應用場景(工作負載)的各項測試結果(評估結果)的趨勢與Web-search雷同，因而省略此場景。</p>
+<p>Storage System:</p>
+<ol>
+<li>Tiering: 作者自己實現的Tiering方案</li>
+<li>Caching: 作者實現的Caching方案</li>
+<li>Mylinear: 一種Tiering的方案，其方法來自Linux DM “Linear” target</li>
+</ol>
+<p>上述不同的儲存系統中，2種Tiering的方案的SSD的容量採用總容量的1&#x2F;4，並且為了在相同設備情況下對結果進行比較，因此Caching的方案的SSD也是相同的備至；不同的是在Caching系統上，SSD作為Cache不能算在總容量中，所以實際上的總容量都為HDD所組成，也就是Caching system的HDD要比Tiering system的HDD多出1&#x2F;4的容量。</p>
+<p>$\alpha$ as the time factor to project future cost extimates (i.e., run the same amount of workload multiple times). </p>
+<h3 id="Web-Search"><a href="#Web-Search" class="headerlink" title="Web Search"></a>Web Search</h3><h4 id="Throughput-Metric"><a href="#Throughput-Metric" class="headerlink" title="Throughput  Metric"></a>Throughput  Metric</h4><ul>
+<li>當PT (Promotion&#x2F;Pre-fetching Threshold) &#x3D; 4, 16時，Caching的throughput比Tiering高4~9%</li>
+<li>當PT&#x3D; 64時，Caching的throughtput和Tiering差不多</li>
+<li>SSD hit ratio: Caching - 81<del>98%, Tiering - 85</del>98%, Mylinear - 8%</li>
+<li>SSD hit ratio和資料搬移(data movement)會影響混合儲存系統的throughput</li>
+</ul>
+<p>Web-search應用場景的讀取(Read)遠多於寫入(Write)，因此回寫(Write-back)的開銷小。此外，Tiering系統中的SSD，在事先就會包含冷熱資料，此情況會增加對總體throughput的開銷。</p>
+<ul>
+<li>回寫(Write-back): 指的是在Caching Storage System中，把資料從Cache(SSD)上寫回Storage Device(HDD)的一種機制。write-back 是將資料量儲存到一定的量之後，會依據同區塊的資料一次整批寫回去.裡面有提到 dirty ，他是在記憶體裡面 cache 的一個 bit 用來指示這筆資料已經被 CPU 修改過但是尚未回寫到儲存裝置中。</li>
+</ul>
+<h5 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h5><p>若Tiering系統將SSD(Tier0)作為主要的儲存設備，但其中(預先)包含冷資料，則Caching系統總體的throughtput會比Tiering高。</p>
+<h4 id="Cost"><a href="#Cost" class="headerlink" title="Cost"></a>Cost</h4><ul>
+<li>長期: <ul>
+<li>在time factor &#x3D; 100000，也就是平均使用2.1年(範圍從0.2~7.7年)左右，Caching系統的總成本會比Tiering系統節省8 ~ 20 %。而在長期使用下，Caching系統更省成本的原因，作者歸納成以下兩點:<ol>
+<li>在Caching系統中，SSD沒有額外的主要IO，但Tiering系統有。因為SSD在Tiering系統中通常扮演最高Tier(Tier0)的角色。因此會有時常搬運的問題。</li>
+<li>從長期使用的角度來看，SSD的耐用度降低的速度，會影響更換的頻率，若更換頻率較高，就會提高更換成本。</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>短期: 在time factor &#x3D; 1時，Caching系統的成本比Tiering系統<strong>略高</strong>，因其需要擴充HDD的容量(上述Storage System的說明中)。</li>
+</ul>
+<p><strong>還未了解如何從time factor轉換成使用年分</strong></p>
+<h3 id="FIU’s-Online"><a href="#FIU’s-Online" class="headerlink" title="FIU’s Online"></a>FIU’s Online</h3><h4 id="Throughput-Metric-1"><a href="#Throughput-Metric-1" class="headerlink" title="Throughput  Metric"></a>Throughput  Metric</h4><ul>
+<li>寫入比讀取多，表示Caching系統的回寫開銷可能會造成throughput瓶頸。</li>
+<li>隨著ES (Extent Size)的變化，Caching系統的throughput會比Tiering系統<strong>低</strong>58 ~ 82%。</li>
+<li>SSD hit ratio: Caching 92 ~ 99%, Tiering 98 ~ 99%, Mylinear 84%。</li>
+<li>當ES &#x3D; 4k時，Caching系統的throughput降低了82%，由於它有更多的回寫IO。</li>
+</ul>
+<h4 id="Cost-1"><a href="#Cost-1" class="headerlink" title="Cost"></a>Cost</h4><ul>
+<li>長期: <ul>
+<li>在time factor &#x3D; 100000，也就是平均使用3.3年(範圍從0.7~9.8年)左右，Caching系統的總成本比Tiering系統高5 ~ 23%。因為在Caching系統中，SSD沒有額外的主要IO，但有更多回寫IO，因此比Tiering系統更快消耗SSD的耐用度，造成長期使用下的設備更換成本。</li>
+</ul>
+</li>
+<li>短期: 在time factor &#x3D; 1時，Caching系統的總成本會比Tiering系統<strong>略高</strong>，原因與Web-search中短期的原因相同。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Auto-Tiering/" rel="tag"># Auto Tiering</a>
+              <a href="/tags/Storage/" rel="tag"># Storage</a>
+              <a href="/tags/Cache/" rel="tag"># Cache</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/07/26/Cost-Effective-Storage-using-Extent-Based-Dynamic-Tiering/" rel="prev" title="Cost Effective Storage using Extent Based Dynamic Tiering">
+      <i class="fa fa-chevron-left"></i> Cost Effective Storage using Extent Based Dynamic Tiering
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/08/04/MTCNN/" rel="next" title="MTCNN">
+      MTCNN <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Cost-Model"><span class="nav-number">1.</span> <span class="nav-text">Cost Model</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#System"><span class="nav-number">2.</span> <span class="nav-text">System</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Evaluation"><span class="nav-number">3.</span> <span class="nav-text">Evaluation</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Web-Search"><span class="nav-number">3.1.</span> <span class="nav-text">Web Search</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Throughput-Metric"><span class="nav-number">3.1.1.</span> <span class="nav-text">Throughput  Metric</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Conclusion"><span class="nav-number">3.1.1.1.</span> <span class="nav-text">Conclusion</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Cost"><span class="nav-number">3.1.2.</span> <span class="nav-text">Cost</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#FIU%E2%80%99s-Online"><span class="nav-number">3.2.</span> <span class="nav-text">FIU’s Online</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Throughput-Metric-1"><span class="nav-number">3.2.1.</span> <span class="nav-text">Throughput  Metric</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Cost-1"><span class="nav-number">3.2.2.</span> <span class="nav-text">Cost</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hamilton Chang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hamilton Chang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

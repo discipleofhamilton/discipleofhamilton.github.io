@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"discipleofhamilton.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="簡要說明 : 此篇論文發表於2016年，摘要中簡要提出當前人臉偵測與矯正所遇到的困境，例如 : 複雜環境、人臉姿態、光照、遮擋(occlusions)。作者提出一個利用固有的相關關係來提升效能的深度學習框架(Deep Cascaded Multi-task framework)，此框架採用一個三階段CNN的聯集架構用於預測人臉與五官在圖像中的位置，並且是一個從粗到細的方法。除此之外，作者還提出一項">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MTCNN">
+<meta property="og:url" content="https://discipleofhamilton.github.io/2022/08/04/MTCNN/index.html">
+<meta property="og:site_name" content="Hamilton Chang&#39;s Blog">
+<meta property="og:description" content="簡要說明 : 此篇論文發表於2016年，摘要中簡要提出當前人臉偵測與矯正所遇到的困境，例如 : 複雜環境、人臉姿態、光照、遮擋(occlusions)。作者提出一個利用固有的相關關係來提升效能的深度學習框架(Deep Cascaded Multi-task framework)，此框架採用一個三階段CNN的聯集架構用於預測人臉與五官在圖像中的位置，並且是一個從粗到細的方法。除此之外，作者還提出一項">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://discipleofhamilton.github.io/2022/08/04/MTCNN/pipeline.png">
+<meta property="og:image" content="https://discipleofhamilton.github.io/2022/08/04/MTCNN/MTCNN_architect.png">
+<meta property="article:published_time" content="2022-08-04T07:02:35.000Z">
+<meta property="article:modified_time" content="2025-05-19T16:51:24.281Z">
+<meta property="article:author" content="Hamilton Chang">
+<meta property="article:tag" content="Face Detection">
+<meta property="article:tag" content="CNN">
+<meta property="article:tag" content="ML&#x2F;DL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://discipleofhamilton.github.io/2022/08/04/MTCNN/pipeline.png">
+
+<link rel="canonical" href="https://discipleofhamilton.github.io/2022/08/04/MTCNN/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>MTCNN | Hamilton Chang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hamilton Chang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://discipleofhamilton.github.io/2022/08/04/MTCNN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hamilton Chang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hamilton Chang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MTCNN
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-08-04 15:02:35" itemprop="dateCreated datePublished" datetime="2022-08-04T15:02:35+08:00">2022-08-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-20 00:51:24" itemprop="dateModified" datetime="2025-05-20T00:51:24+08:00">2025-05-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Face-Detection/" itemprop="url" rel="index"><span itemprop="name">Face Detection</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p><strong>簡要說明 :</strong></p>
+<p>此篇<a target="_blank" rel="noopener" href="https://kpzhang93.github.io/MTCNN_face_detection_alignment/index.html">論文</a>發表於2016年，摘要中簡要提出當前人臉偵測與矯正所遇到的困境，例如 : 複雜環境、人臉姿態、光照、遮擋(occlusions)。作者提出一個利用固有的相關關係來提升效能的深度學習框架(Deep Cascaded Multi-task framework)，此框架採用一個三階段CNN的聯集架構用於預測人臉與五官在圖像中的位置，並且是一個從粗到細的方法。除此之外，作者還提出一項新的online hard sample mining策略，可以在不需手動採養選取的情況下自動提高效能。</p>
+<p><em>補充與理解</em> :</p>
+<p>針對人臉偵測的應用場景來說，我個人認為作者主要把重心放在場景相對複雜的實時動態人臉偵測。我目前的研究項目與應用場景(門禁系統)中其實是相對簡單，傳統人臉檢測方式(Haar, LBP, dlib)在CPU等級是可以符合大多數的應用，但由於我是用於一般家庭的門禁系統，因此對於在檢測方面魯棒性要求要高，才能滿足用戶體驗，傳統方法嚴重受限於場景。</p>
+<p>從摘要中可以得知，作者提出幾個要點 :</p>
+<ol>
+<li>利用人臉特徵與人臉關鍵點的關聯訊息得到效能與準確度提升。</li>
+<li>採用三階段輕量的網路聯集架構，每個階段是從粗到細的過程。</li>
+<li>提出新的online hard sample mining。</li>
+</ol>
+<span id="more"></span>
+
+<h2 id="網路架構詳解"><a href="#網路架構詳解" class="headerlink" title="網路架構詳解"></a>網路架構詳解</h2><p>MTCNN的CNN網路結構是參考<a target="_blank" rel="noopener" href="http://users.eecs.northwestern.edu/~xsh835/assets/cvpr2015_cascnn.pdf">A Convolutional Neural Network Cascade for Face Detection[1]</a>，基於此篇的多重卷積神經網路人臉偵測，MTCNN作者針對上述論文的方法提出幾個缺點 :</p>
+<ol>
+<li>有些filter缺乏權重的多樣性，可能會限制生產判別的描述。我的理解是filter權重不夠多樣造成產生的判斷不夠準確。</li>
+<li>與其他多類別目標偵測與分類來說，人臉偵測是一項具挑戰性的二分類任務，因此需要較少數的filter，但需要區別性較較多的filter。</li>
+</ol>
+<p>由於上述兩項缺點，MTCNN的作者做了針對性的調整，<strong>減少filter的數量，用3x3的filter替換5x5的filter以增加深度而減少計算量，得到更好的效能</strong>。與參考的網路相比耗時少，參考下面列表 : </p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>CNN</th>
+<th>300 Times Forward(s)</th>
+<th>Accuracy(%)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Group1</td>
+<td>12-Net[1]</td>
+<td>0.038</td>
+<td>94.4</td>
+</tr>
+<tr>
+<td>Group1</td>
+<td>P-Net</td>
+<td>0.031</td>
+<td>94.6</td>
+</tr>
+<tr>
+<td>Group2</td>
+<td>24-Net[1]</td>
+<td>0.738</td>
+<td>95.1</td>
+</tr>
+<tr>
+<td>Group2</td>
+<td>R-Net</td>
+<td>0.458</td>
+<td>95.4</td>
+</tr>
+<tr>
+<td>Group3</td>
+<td>48-Net[1]</td>
+<td>3.577</td>
+<td>93.2</td>
+</tr>
+<tr>
+<td>Group3</td>
+<td>O-Net</td>
+<td>1.347</td>
+<td>95.4</td>
+</tr>
+</tbody></table>
+<p><img src="/2022/08/04/MTCNN/pipeline.png" alt="pipeline"></p>
+<p>主要分為一項前置作業與三個階段網路 : image &gt; image pyramind、Proposal Network(P-Net)、Refine Network(R-Net)、Output Network(O-Net)，其各自的流程為上圖。看似三層網路可能是相連且參數量較多，但實際上各層網路中間還需要經過轉換處理，大致上理解是用bounding box regression vectors去矯正候選框與用NMS(Non-maximum suppresion)融合高重合候選框，其詳細架構為下圖。下列是前置作業和三層CNNs的目的與說明 : </p>
+<ol>
+<li><p><strong>Image Pyramid Stage</strong> : 在P-Net收到raw image之前，會先將圖像轉成圖像金字塔(image pyramid)，我認為目的是由於訓練時是固定的，所以為了更符合模型，在測試時識別各尺度的人臉準確度提升。缺點是速度降低 : 1. 生成圖像金字塔速度慢 2. 每種尺度(scale)的圖片都需要輸入模型。</p>
+<p> 圖像金字塔主要是依照原圖給定不同大小的縮放。在MTCNN中圖像金字塔與face minimum size有關 : </p>
+ <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">factor_count = <span class="number">0</span></span><br><span class="line">total_boxes = np.empty((<span class="number">0</span>, <span class="number">9</span>))</span><br><span class="line">points = []</span><br><span class="line">h = img.shape[<span class="number">0</span>]</span><br><span class="line">w = img.shape[<span class="number">1</span>]</span><br><span class="line">minl = np.amin([h, w])</span><br><span class="line">minl = minl * m</span><br><span class="line"></span><br><span class="line"><span class="comment"># create image (scale) pyramid</span></span><br><span class="line">scales = []</span><br><span class="line"><span class="keyword">while</span> minl &gt;= <span class="number">12</span>:</span><br><span class="line">    scales += [m * np.power(factor, factor_count)]</span><br><span class="line">    minl = minl * factor</span><br><span class="line">    factor_count += <span class="number">1</span></span><br></pre></td></tr></table></figure>
+</li>
+<li><p><strong>Proposal Network(P-Net)</strong> : 是一個全卷積網路(fully convolutional neural network)，目的是產生候選框與bounding box regression vectors，且方法與<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1502.02766.pdf">Multi-view Face Detection Using Deep Convolutional Neural Network[2]</a>相似。</p>
+<p> <em>理解與補充</em> :</p>
+<p> 卷積、池化、非線性激勵(激活)都能接受非一致的輸入圖片尺度大小，全連接(fully connection)則是要固定輸入。P-Net在訓練時是固定的輸入大小(12 x 12 x 3)，本來在測試時是不需要將輸入的圖片resize，但為了提升準確度，有image pyramid stage。</p>
+</li>
+<li><p><strong>Refine Network(R-Net)</strong> : 是CNN，輸入為P-Net輸出的候選框，目的是剔除錯誤(沒有人臉)的候選框。</p>
+</li>
+<li><p><strong>Output Network(O-Net)</strong> : 與R-Net相似，但主要目的是更清楚描述人臉，會將R-Net輸出的候選框當作輸入，一張人臉會產生一個最後的人臉框座標與五個人臉要點的位置。</p>
+<p> <img src="/2022/08/04/MTCNN/MTCNN_architect.png" alt="architect"></p>
+</li>
+</ol>
+<h2 id="訓練任務與損失函數詳解"><a href="#訓練任務與損失函數詳解" class="headerlink" title="訓練任務與損失函數詳解"></a>訓練任務與損失函數詳解</h2><p>此網路的目的是實時地得到準確的人臉位置與五個人臉關鍵點。主要利用下述三項任務去訓練偵測器，有無人臉分類器、bounding box regression與人臉關鍵點定位(facial landmark localization)。其中針對不同的任務與分類器，所需要的損失函數也相對不同。以下將針對訓練任務與MTCNN作者所提出的損失函數進行說明與分析 :</p>
+<ol>
+<li><p><strong>人臉分類</strong> : </p>
+<p>學習目標被表述為一個二分類問題，任意樣本$x_i$為例，作者使用交叉熵損失(cross-entropy loss) :</p>
+<p>$$<br>L_i^{det} &#x3D; -(y_i^{det}\log(p_i) + (1 - y_i^{det})(1 - \log(p_i)))​<br>$$</p>
+<p>其中$p_i​$是由網路產生的機率，用來表示一個樣本是一張人臉的機率。$y_i^{det} \in {0, 1}​$表示ground-truth 標籤。</p>
+<p><em>理解與疑問</em> : </p>
+<p>針對分類問題，理論上希望錯誤率越低越好，但通常不會直接使用錯誤率作為損失函數，原因是單看錯誤率無法比較模型之間的差異，因為可能出現相同錯誤率但不同準確度的情形。造成在進行模型訓練時難以得到較好的學習方向，當用錯誤率判別時，無法得知目前模型的錯誤是多或是少，因此也不知道最佳模型的要往哪個方向與更新多少。</p>
+<p>cross-entropy loss function本身在loss function的兩大類(regression&#x2F;classification)中屬於分類，且主要用於二分類(Binary)和多分類問題。其中的entropy是<strong>接收的所有資訊所包含訊息的平均量</strong>，用來察看資料的混亂度與不確定性。softmax激活函數+cross-entropy的含意是真實類別的判斷正確機率，可以得知當cross-entropy越小模型的效果越好(<a target="_blank" rel="noopener" href="https://medium.com/@chih.sheng.huang821/%E6%A9%9F%E5%99%A8-%E6%B7%B1%E5%BA%A6%E5%AD%B8%E7%BF%92-%E5%9F%BA%E7%A4%8E%E4%BB%8B%E7%B4%B9-%E6%90%8D%E5%A4%B1%E5%87%BD%E6%95%B8-loss-function-2dcac5ebb6cb">詳細說明1</a>、<a target="_blank" rel="noopener" href="https://medium.com/@chungyizhen/cross-entropy%E7%9A%84%E7%9B%B4%E8%A7%80%E7%90%86%E8%A7%A3-82e525e3780c">詳細說明2</a>)。</p>
+<p>近年在CNNs中較常見的Softmax loss也就是基於softmax激活函數+cross-entropy與其變形。</p>
+</li>
+<li><p><strong>Bounding box regression</strong> : </p>
+<p>作者預測任意候選框與其最近的ground truth之間的位移，學習目標被表述為一個回歸問題，且對任意樣本$x_i$使用歐式損失(Euclidean loss) :</p>
+<p>$$<br>L_i^{box} &#x3D; ||\hat{y}_i^{box} - y_i^{box}||_2^2<br>$$<br>其中$\hat{y}_i^{box}​$回歸目標是從網路獲取的，且$y_i^{box}​$是ground-truth的座標。總共有四個座標，包含左上、寬、高等等，且其限制用數學式表示為$y_i^{box}\in\mathbb{R}^4​$，$\mathbb{R}​$的意思是實數。</p>
+<p><em>理解與疑問</em> : </p>
+<p>$\lvert\lvert{x}\rvert\rvert_2$代表的是第二正規化&#x2F;范式，單純將上述的公式轉換後發現與L2公式相同，但歐式損失定義為$\frac{1}{2N}\sum_{i&#x3D;1}^N\lvert\lvert{x_i^1-x_i^2}\rvert\rvert_2^2$，可以發現與上述的公式比多了$\frac{1}{2N}​$，所以在這裡我有一些困惑。除此之外，還有在此用歐式損失的涵義為何目前我也沒理解。</p>
+</li>
+<li><p><strong>人臉關鍵點定位 (facial landmark localization)</strong> : </p>
+<p>與bounding box regression任務相似，人臉關鍵點偵測(facial landmark detection)被表述為一個回歸問題，且作者最小化了歐式損失(Euclidean loss) : </p>
+<p>$$<br>L_i^{landmark} &#x3D; ||\hat{y}_i^{landmark} - y_i^{landmark}||_2^2<br>$$</p>
+<p>其中$\hat{y}_i^{landmark}$是從網路獲取的人臉關鍵點座標，$y_i^{landmark}$則是ground-truth座標。總共有五個人臉關鍵點，包含雙眼、鼻子與左右嘴角，且$y_i^{box}\in\mathbb{R}^{10}​$。</p>
+<p><em>理解與疑問</em> : </p>
+<p>由於與bounding box regression運作相似，因此也是使用了歐式損失，作者在文中說針對此部分的損失函數做了最小化。</p>
+</li>
+<li><p><strong>Multi-source training</strong> : </p>
+<p>將不同任務分配到每個CNNs中，造就在學習的過程中需要不同類型的訓練圖片，例如 : 包含人臉的、不包含人臉的與部分矯正(對齊)的人臉圖片。在某些情況下，上述的損失函數可能不會全部都用到，例如 : 圖片背景區域樣本只計算$L_i^{det}$，另外兩個損失函數的數值被設定為0。此任務可以直接用一個sample type indicator實現，所有的學習目標可以被表示為 : </p>
+<p>$$<br>\min \sum_{i&#x3D;1}^N{ \sum_{ j\in{det,box,landmark} } {\alpha_j\beta_i^jL_i^j} }<br>$$</p>
+<p>其中$N$是訓練樣本的數量，$\alpha_j$表示任務的重要性。作者為了得到精度更高的人臉關鍵點定位，在P-Net與R-Net中用的參數為$(\alpha_{det}&#x3D;1,\alpha_{box}&#x3D;0.5,\alpha_{landmark}&#x3D;0.5)$，O-Net為$(\alpha_{det}&#x3D;1,\alpha_{box}&#x3D;0.5,\alpha_{landmark}&#x3D;1)$。$\beta_i^j\in{0,1}$則是<strong>此</strong>樣本類型指示器 ($\beta_i^j\in{0,1}$ is the sample type indicator)，在此條件下用隨機梯度下降(stochastic gradient descent)訓練CNNs是很自然的。</p>
+<p><em>理解與疑問</em> : </p>
+<p>作者將上述三項損失函數統整到一項數學式中，但我對multi-source training的概念有幾項不了解的地方 : </p>
+<ol>
+<li>什麼是sample type indicator，還有其作用是什麼?</li>
+<li>如何把前三項損失函數統整成一項數學式?</li>
+<li>為什麼在這樣的條件下使用隨機梯度下降是很自然的? 是否有反向傳播?</li>
+</ol>
+</li>
+<li><p><strong>Online Hard sample mining</strong> : </p>
+<p>與最初的分類器在被訓練後進行traditional hard sample mining不同，人臉分類任務中採用online hard sample mining用來適應訓練過程。</p>
+<p>在每個mini-batch的前向傳播(forward propagation)階段中，依照已經計算完成的損失函數數值排序全部樣本，並選擇前70%作為重樣本(hard samples)。在反向傳播(backward propagation &#x2F; backpropagation)階段只從重樣本中計算梯度(gradient)，這代表<strong>忽略簡單的樣本，換句話說，就是忽略在訓練中對強化此檢測器幫助較少的樣本</strong>。</p>
+<p><em>理解與疑問</em> : </p>
+<p>我理解在此論文中提出的人臉檢測方法中使用online hard sample mining取代traditional hard sample mining，目的是忽略training中對提升檢測器精準度幫助較少的樣本，如此一來，既可以維持準確度亦可以提升速度。</p>
+</li>
+</ol>
+<h2 id="優化方向"><a href="#優化方向" class="headerlink" title="優化方向"></a>優化方向</h2><p>我認為優化不需要只考慮網路本身，可以分成幾個方向來剖析問題 :</p>
+<ul>
+<li><p>input : </p>
+<ul>
+<li>原圖resize : 對input做下採樣。說白一點，有點像是slide window在掃描圖片時，圖片縮小造成需要掃描的面積減掃，導致運行速度加快，準確度下降。如何找到平衡點需要programmer自行調適。</li>
+<li>face minimum size : 放大掃描人臉的最小框。當一張圖片上用slide window(face window)掃描原圖生成候選框時，框體面積增大而掃描面積固定導致速度會提升，但人臉小於基本框體則無法偵測出來。</li>
+</ul>
+</li>
+<li><p>網路 : 目前針對網路的部分只有一些想法，主要是此篇論文為2016年提出，在之後提出的方法與改念都可以用在優化的部分。目前可以分稱幾個部分 : 卷積、網路架構、池化、損失函數、image pyramid stage。</p>
+</li>
+<li><p>output : output的部分其實有牽涉到網路結構，雖然是改進網路結構，但主要的思想來自我認為不需要O-Net輸出的facial landmark，而facial landmark確實對人臉偵測有所幫助，因此想切除O-Net只做P-Net與R-Net。目前的結果不甚理想，不知道原因為何，速度在face minimum size &#x3D; 20下只提升1~2fps且準確度略有下降。</p>
+</li>
+<li><p>框架 : 可以替換或是增加Caffe等框架，例如 : 用OpenCV的dnn、騰訊的ncnn、小米的MACE、Intel的OpenVINO或是Qualcomm的SNPE等等，以上大多是移動平台對自家硬體提出的加速框架，而其中NVIDIA也有提出基於自家GPU的加速框架TensorRT。但要特別注意每個框架支援那些其他的參數與模型檔案。</p>
+</li>
+</ul>
+<p>參考 : <a target="_blank" rel="noopener" href="https://blog.csdn.net/Relocy/article/details/84075570">MTCNN優化方向</a>、<a target="_blank" rel="noopener" href="https://github.com/Ewenwan/MVision/blob/master/CNN/HighPerformanceComputing/readme.md">高性能計算</a>。</p>
+<h2 id="Source-Code"><a href="#Source-Code" class="headerlink" title="Source Code"></a>Source Code</h2><p>下列所提出的source code我都有實際跑通與測試，我使用的環境是 : Ubuntu 14.04 64-bit, CPU i5-4590 , Memory 16G, GPU GTX 960。 </p>
+<p>除了原作是Caffe + MatLab之外，其餘都是Tensorflow + Python，在某篇Blog(找到此篇Blog將附上連結)中提到，好像用Tensorflow框架實現會比用Caffe框架更高效。</p>
+<ol>
+<li><a target="_blank" rel="noopener" href="https://github.com/kpzhang93/MTCNN_face_detection_alignment">論文github</a> : 是由論文的原作親自實現並開源的程式碼，且有兩個版本，我還未比較兩版本的差異。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/davidsandberg/facenet/tree/master/src/align">davidsandberg&#x2F;github</a> : 這個版本的MTCNN是Python + Tensorflow，也是最多人參考並實現的MTCNN版本，其目的是做FaceNet(人臉辨識)之前的人臉檢測。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/wangbm/MTCNN-Tensorflow">wangbm&#x2F;github</a> : 這個版本是基於davidsandberg與原作實現的，有提供完整的網路架構、train與test的腳本，是我目前更動最多的版本。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/AITTSMD/MTCNN-Tensorflow">AITTSMD&#x2F;github</a> : 此版本是基於Tensorflow中最多人使用的source code之一，作者是中國人，所以在github的issue中提問可以用中文，作者也會用中文回答你。</li>
+<li><a target="_blank" rel="noopener" href="https://github.com/ipazc/mtcnn">ipazc&#x2F;github</a> : 這份程式碼的作者將程式封裝，對Python的使用者來說，可以直接在terminal中下<code>pip install mtcnn</code>來安裝，並直接在python中<code>import mtcnn</code>來使用。對單純想使用此演算法的人而言相當方便，但如果你想跟我一樣針對網路做優化或是修改，那就完全不能使用這個版本。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Face-Detection/" rel="tag"># Face Detection</a>
+              <a href="/tags/CNN/" rel="tag"># CNN</a>
+              <a href="/tags/ML-DL/" rel="tag"># ML/DL</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/08/03/On-the-Importance-of-Evaluating-Storage-System-s/" rel="prev" title="On the Importance of Evaluating Storage System's $Cost">
+      <i class="fa fa-chevron-left"></i> On the Importance of Evaluating Storage System's $Cost
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%B6%B2%E8%B7%AF%E6%9E%B6%E6%A7%8B%E8%A9%B3%E8%A7%A3"><span class="nav-number">1.</span> <span class="nav-text">網路架構詳解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A8%93%E7%B7%B4%E4%BB%BB%E5%8B%99%E8%88%87%E6%90%8D%E5%A4%B1%E5%87%BD%E6%95%B8%E8%A9%B3%E8%A7%A3"><span class="nav-number">2.</span> <span class="nav-text">訓練任務與損失函數詳解</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%84%AA%E5%8C%96%E6%96%B9%E5%90%91"><span class="nav-number">3.</span> <span class="nav-text">優化方向</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Source-Code"><span class="nav-number">4.</span> <span class="nav-text">Source Code</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hamilton Chang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hamilton Chang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

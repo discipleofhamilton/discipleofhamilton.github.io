@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"discipleofhamilton.github.io","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="The project is an algorithm reproduction of the paper “Automating Distributed Tiered Storage Management in Cluster Computing“. In brief, the main idea concept of the prediction is HOW TO GENERATE THE">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Auto-Tiering">
+<meta property="og:url" content="https://discipleofhamilton.github.io/2022/07/26/Auto-Tiering/index.html">
+<meta property="og:site_name" content="Hamilton Chang&#39;s Blog">
+<meta property="og:description" content="The project is an algorithm reproduction of the paper “Automating Distributed Tiered Storage Management in Cluster Computing“. In brief, the main idea concept of the prediction is HOW TO GENERATE THE">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://i.imgur.com/BZlp9m7.png">
+<meta property="og:image" content="https://i.imgur.com/rb87ExE.png">
+<meta property="og:image" content="https://i.imgur.com/g7xCffq.png">
+<meta property="og:image" content="https://i.imgur.com/KE0k1bp.png">
+<meta property="og:image" content="https://i.imgur.com/zuFRqPg.png">
+<meta property="og:image" content="https://i.imgur.com/kjODcz5.png">
+<meta property="article:published_time" content="2022-07-26T13:31:36.000Z">
+<meta property="article:modified_time" content="2025-05-19T16:51:24.280Z">
+<meta property="article:author" content="Hamilton Chang">
+<meta property="article:tag" content="Auto Tiering">
+<meta property="article:tag" content="Storage">
+<meta property="article:tag" content="Cache">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.imgur.com/BZlp9m7.png">
+
+<link rel="canonical" href="https://discipleofhamilton.github.io/2022/07/26/Auto-Tiering/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'en'
+  };
+</script>
+
+  <title>Auto-Tiering | Hamilton Chang's Blog</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Hamilton Chang's Blog</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>About</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>Tags</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>Categories</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="en">
+    <link itemprop="mainEntityOfPage" href="https://discipleofhamilton.github.io/2022/07/26/Auto-Tiering/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Hamilton Chang">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Hamilton Chang's Blog">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Auto-Tiering
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2022-07-26 21:31:36" itemprop="dateCreated datePublished" datetime="2022-07-26T21:31:36+08:00">2022-07-26</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2025-05-20 00:51:24" itemprop="dateModified" datetime="2025-05-20T00:51:24+08:00">2025-05-20</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Storage/" itemprop="url" rel="index"><span itemprop="name">Storage</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>The project is an algorithm reproduction of the paper “<a target="_blank" rel="noopener" href="https://arxiv.org/pdf/1907.02394.pdf">Automating Distributed Tiered Storage Management in Cluster Computing</a>“. In brief, the main idea concept of the prediction is HOW TO GENERATE THE USEFUL DATA OR FEATURE TO THE MODEL. The paper emphasis on how to collect the data, preprocessing, and determine which attribution is useful, then extract them to the features. The model it use is XGBoost, and it says directly. There only 2 hyper parameters matter: one is “the depth” of the tree, the other is “the rounds” of the training. </p>
+<span id="more"></span>
+
+<h2 id="Data-Preprocessing"><a href="#Data-Preprocessing" class="headerlink" title="Data Preprocessing"></a>Data Preprocessing</h2><p>Before training and testing the model, we need to preprocess the data to get the features and labels. When the model would be released, the process still need to be done because of the online training policy.</p>
+<p>As paper says there are 3 basic and significant attributes:</p>
+<ol>
+<li>the creation time of a file</li>
+<li>the last k access time of a file</li>
+<li>the file size of a file</li>
+</ol>
+<p>Because the access time increases by the time, the author propose a method: replace using time stamp directly with time interval which named time delta in the paper. </p>
+<p>Besides the time delta idea, there is another idea called reference time which is time point to separate the “past” from the “future”. For training, collect the features with the basic attributes from the “past”, and then mark the label “1” if the file will be access in the “future” but mark “0”. Here come two expanded parameters:</p>
+<ol>
+<li>the interval between the reference time which named “reference poll size” by me</li>
+<li>the window size of the future, which means the next k minutes we want to predict</li>
+</ol>
+<h3 id="Steps"><a href="#Steps" class="headerlink" title="Steps"></a>Steps</h3><p><img src="https://i.imgur.com/BZlp9m7.png" alt="data-preprocessing"></p>
+<center>Figure1: Data Preprocessing Workflow </center>
+
+
+
+<p>Figure 1 is the full workflow of data processing. There are 3 steps:</p>
+<ol>
+<li>Clean the raw data&#x2F;log</li>
+<li>Parse structured data to get processed data and reference list</li>
+<li>Prepare dataset which contains features and labels</li>
+</ol>
+<h4 id="Step-1-Data-Clean"><a href="#Step-1-Data-Clean" class="headerlink" title="Step 1: Data Clean"></a>Step 1: Data Clean</h4><p>Raw data is quite messy and unstructured. The GOAL is to structurize it and output <code>processed_log</code> which contains 4 useful attributes:</p>
+<ol>
+<li>time: Convert the date and current to minutes, because the basic time unit that would be predicted is minutes.</li>
+<li>file path: The absolute path to the file.</li>
+<li>file size: Bytes.</li>
+<li>mode: ACCESS, MODIFY, CREATE, …</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">data = &#123;</span><br><span class="line">        <span class="string">&quot;time&quot;</span>: t,</span><br><span class="line">        <span class="string">&quot;file_path&quot;</span>: file_path,</span><br><span class="line">        <span class="string">&quot;size&quot;</span>: size,</span><br><span class="line">        <span class="string">&quot;mode&quot;</span>: mode</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong>The paper use 6-hour data for training, validation and testing. In order to reproduce the result, I cut the 6-hour data from my log at the step.</strong></p>
+<h4 id="Step-2-Data-Parsing"><a href="#Step-2-Data-Parsing" class="headerlink" title="Step 2: Data Parsing"></a>Step 2: Data Parsing</h4><p>The GOAL is to get the file based dataset <code>processed_data</code> and time based dataset <code>reference_time_list</code> from <code>processed_log</code>. </p>
+<p><code>processed_data</code>: </p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">processed_data[file] = &#123;</span><br><span class="line">    <span class="string">&quot;create_time&quot;</span>: c_time,</span><br><span class="line">    <span class="string">&quot;access_time_list&quot;</span>: acs_time,</span><br><span class="line">    <span class="string">&quot;file_size&quot;</span>: fsize</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<ol>
+<li>Use double map structure to store the 3 main attributes of each file.</li>
+<li>Find the lack creation time, use the other tool to get it and fill into the dataset.</li>
+</ol>
+<p><code>reference_time_list</code>:</p>
+<p><img src="https://i.imgur.com/rb87ExE.png" alt="reference-list"></p>
+<center>Figure2: Reference Time List</center>
+
+<p>Reference time list is to know when to get the features and predict. It and <code>reference poll size</code> is related to how to split whole dataset into training, validation and testing set. The description of how to split is in Step 3.</p>
+<h4 id="Step-3-Generate-Features-amp-Labels"><a href="#Step-3-Generate-Features-amp-Labels" class="headerlink" title="Step 3: Generate Features &amp; Labels"></a>Step 3: Generate Features &amp; Labels</h4><p>In the Step, I need to deal with 2 issue: </p>
+<ol>
+<li>Features and labels generate</li>
+<li>Prepare training, validation, testing set</li>
+</ol>
+<p><img src="https://i.imgur.com/g7xCffq.png" alt="gen-feat-label"></p>
+<center>Figure3: Features and Labels Generate</center>
+
+
+
+<p><strong>Features and labels generate</strong>: Figure 3 is an example and it is Figure 4 in the paper, the correction with red ink is a typo which I asked the first author already. </p>
+<blockquote>
+<p>Hence, we use the timestamps to generate time deltas, that is, the time difference between (i) two consecutive time accesses, (ii) the oldest time access and creation time, (iii) a reference time and the most recent access, and (iv) a reference time and creation time. A reference time is a particular point in time chosen to separate the perceived “past” from the perceived “future”. The past represents when and how frequently a file has been accessed and, thus, it is used to generate the feature vectors ~xi. On the other hand, the future shows whether the file will be reaccessed in a given forward-looking class window, which is used to generate the class label y: if a file is accessed during the window, then y&#x3D; 1; otherwise y&#x3D; 0. Note that by sliding the reference time in the time axis, we can generate multiple training points (i.e., feature vectors and corresponding class values) based on the access history of a single file.</p>
+<p>The final step in our data preparation involves normalizing the features by rescaling all the values to lie between 0 and 1. Normalization is performed by diving the time deltas by a maximum time interval (e.g., 1 month), which is useful for avoiding outliers from situations where a file was not accessed for a long time. Figure 4 shows a complete example of the training data preparation process. As the file is accessed 3 times before the chosen reference time, the feature vector will contain 5 normalized time deltas as explain above and one file size feature. The remaining k − 3 access-based features are encoded as missing values. The class value is set to 1 since the file is accessed within the class window.</p>
+</blockquote>
+<p><strong>Here are 3 further issues</strong>:</p>
+<ol>
+<li><p>How to normalize the file size and time delta?</p>
+<p>I have done double check. First, I calculated the denominator from the example and got 4GB file size and 2 days time interval as a denominator for normalization. Second, I asked the first author of the paper about the what size of the denominator did he use. The responses are exactly the same of mine.</p>
+</li>
+<li><p>What size of the future&#x2F;class window is appropriate?</p>
+<p>I use the 30 minutes which is recommended by the paper.</p>
+</li>
+<li><p>What size of access time list is appropriate? what is <code>k</code>?</p>
+<p>The size I use is 12. The reason is in Section 7.6 of the paper.</p>
+</li>
+</ol>
+<p><img src="https://i.imgur.com/KE0k1bp.png" alt="training-validation-testing"></p>
+<center>Figure4: Preparation of Training, Validation and Testing Dataset</center>
+
+
+
+<p><strong>Prepare training, validation, testing set</strong>:</p>
+<p>I split the first 4 hours as training set. To remain the features and labels consist, every points in time of the split need to be in reference time list. e.g. $r_k$ is the split time point and the $k^{th}$ reference time.</p>
+<h2 id="Training"><a href="#Training" class="headerlink" title="Training"></a>Training</h2><p><img src="https://i.imgur.com/zuFRqPg.png" alt="training-workflow"></p>
+<center>Figure3: Training Workflow</center>
+
+
+
+
+
+<h2 id="Testing"><a href="#Testing" class="headerlink" title="Testing"></a>Testing</h2><p><img src="https://i.imgur.com/kjODcz5.png" alt="testing-workflow"></p>
+<center>Figure4: Testing Workflow</center>
+
+
+
+<p><code>future_win_size</code>: 30 mins, <code>reference_poll_size</code>: 15 mins</p>
+<table>
+<thead>
+<tr>
+<th align="center">Accuracy</th>
+<th align="center">Precision</th>
+<th align="center">Recall</th>
+<th align="center">F1-Score</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center">87.22%</td>
+<td align="center">93.33%</td>
+<td align="center">81.16%</td>
+<td align="center">86.82%</td>
+</tr>
+</tbody></table>
+<p><code>future_win_size</code>: 30 mins, <code>reference_poll_size</code>: 30 mins</p>
+<table>
+<thead>
+<tr>
+<th>date</th>
+<th>t_accuracy</th>
+<th>t_precision</th>
+<th>t_recall</th>
+<th>v_accuracy</th>
+<th>v_precision</th>
+<th>v_recall</th>
+<th>record_file_num</th>
+<th>start_time</th>
+<th>Training time (secs)</th>
+<th>use_model_selection</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2021&#x2F;11&#x2F;12</td>
+<td>88.47%</td>
+<td>74.22%</td>
+<td>91.21%</td>
+<td>83.27%</td>
+<td>82.56%</td>
+<td>68.74%</td>
+<td>1759</td>
+<td>11:00:00</td>
+<td>0.113</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;13</td>
+<td>82.87%</td>
+<td>78.52%</td>
+<td>88.50%</td>
+<td>75.42%</td>
+<td>67.01%</td>
+<td>86.90%</td>
+<td>618</td>
+<td>10:00:00</td>
+<td>0.212</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;14</td>
+<td>92.18%</td>
+<td>93.87%</td>
+<td>88.93%</td>
+<td>67.43%</td>
+<td>62.45%</td>
+<td>81.25%</td>
+<td>632</td>
+<td>10:00:00</td>
+<td>0.093</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;15</td>
+<td>84.54%</td>
+<td>65.84%</td>
+<td>96.52%</td>
+<td>71.23%</td>
+<td>50.26%</td>
+<td>84.91%</td>
+<td>1094</td>
+<td>10:00:00</td>
+<td>0.128</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;16</td>
+<td>87.98%</td>
+<td>82.82%</td>
+<td>86.07%</td>
+<td>80.28%</td>
+<td>92.58%</td>
+<td>65.99%</td>
+<td>1660</td>
+<td>10:00:00</td>
+<td>0.115</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;17</td>
+<td>78.76%</td>
+<td>58.91%</td>
+<td>84.43%</td>
+<td>84.84%</td>
+<td>64.61%</td>
+<td>88.89%</td>
+<td>1620</td>
+<td>10:00:00</td>
+<td>0.131</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;18</td>
+<td>86.00%</td>
+<td>88.49%</td>
+<td>79.17%</td>
+<td>86.58%</td>
+<td>90.08%</td>
+<td>79.84%</td>
+<td>1324</td>
+<td>10:00:00</td>
+<td>0.106</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;19</td>
+<td>89.87%</td>
+<td>83.36%</td>
+<td>77.05%</td>
+<td>88.81%</td>
+<td>78.80%</td>
+<td>80.44%</td>
+<td>1768</td>
+<td>10:00:00</td>
+<td>0.197</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;20</td>
+<td>89.07%</td>
+<td>81.76%</td>
+<td>99.45%</td>
+<td>94.41%</td>
+<td>95.88%</td>
+<td>94.26%</td>
+<td>624</td>
+<td>10:00:00</td>
+<td>0.096</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;21</td>
+<td>83.76%</td>
+<td>75.94%</td>
+<td>98.99%</td>
+<td>83.89%</td>
+<td>84.80%</td>
+<td>89.23%</td>
+<td>626</td>
+<td>10:00:00</td>
+<td>0.099</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;22</td>
+<td>84.60%</td>
+<td>81.97%</td>
+<td>83.38%</td>
+<td>87.39%</td>
+<td>82.84%</td>
+<td>90.82%</td>
+<td>983</td>
+<td>10:00:00</td>
+<td>0.119</td>
+<td>False</td>
+</tr>
+<tr>
+<td>2021&#x2F;11&#x2F;23</td>
+<td>85.71%</td>
+<td>82.58%</td>
+<td>82.20%</td>
+<td>91.02%</td>
+<td>92.49%</td>
+<td>89.00%</td>
+<td>1019</td>
+<td>04:00:00</td>
+<td>0.129</td>
+<td>False</td>
+</tr>
+</tbody></table>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/Auto-Tiering/" rel="tag"># Auto Tiering</a>
+              <a href="/tags/Storage/" rel="tag"># Storage</a>
+              <a href="/tags/Cache/" rel="tag"># Cache</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2022/07/26/Cost-Effective-Storage-using-Extent-Based-Dynamic-Tiering/" rel="next" title="Cost Effective Storage using Extent Based Dynamic Tiering">
+      Cost Effective Storage using Extent Based Dynamic Tiering <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Data-Preprocessing"><span class="nav-number">1.</span> <span class="nav-text">Data Preprocessing</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Steps"><span class="nav-number">1.1.</span> <span class="nav-text">Steps</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-1-Data-Clean"><span class="nav-number">1.1.1.</span> <span class="nav-text">Step 1: Data Clean</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-2-Data-Parsing"><span class="nav-number">1.1.2.</span> <span class="nav-text">Step 2: Data Parsing</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Step-3-Generate-Features-amp-Labels"><span class="nav-number">1.1.3.</span> <span class="nav-text">Step 3: Generate Features &amp; Labels</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Training"><span class="nav-number">2.</span> <span class="nav-text">Training</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Testing"><span class="nav-number">3.</span> <span class="nav-text">Testing</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Hamilton Chang</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">2</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">6</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2025</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Hamilton Chang</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
